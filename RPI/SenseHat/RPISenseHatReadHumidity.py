@@ -34,7 +34,10 @@ class RPISenseHat(object):
         return len(self.content)
 
 def onTrigger(context, session):
-    flow_file = session.create()
-    humidity = sense.get_humidity()
-    flow_file.addAttribute("sensehat_humidity", str(humidity))
+    flow_file = session.get()
+
+    if flow_file is None:
+        flow_file = session.create()
+
+    flow_file.addAttribute("sensehat_humidity", str(sense.get_humidity()))
     session.transfer(flow_file, REL_SUCCESS)
