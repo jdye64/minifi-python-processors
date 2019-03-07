@@ -14,29 +14,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import codecs
-import atexit
-from Raspi_MotorHAT import Raspi_MotorHAT, Raspi_StepperMotor
+from sense_hat import SenseHat
 
-mh = Raspi_MotorHAT(0x6F)
-myStepper = None
-
-def turnOffMotors():
-    mh.getMotor(1).run(Raspi_MotorHAT.RELEASE)
-    mh.getMotor(2).run(Raspi_MotorHAT.RELEASE)
-    mh.getMotor(3).run(Raspi_MotorHAT.RELEASE)
-    mh.getMotor(4).run(Raspi_MotorHAT.RELEASE)
-
-atexit.register(turnOffMotors())
+sense = SenseHat()
 
 def describe(processor):
-    processor.setDescription("Controls a 12V .5 AMP stepper motor attached to a Raspberry PI")
+    processor.setDescription("Reads the pitch, roll, and yaw from the locally attached RPI SenseHat")
 
 def onInitialize(processor):
     processor.setSupportsDynamicProperties()
-    myStepper = mh.getStepper(200, 2)
-    myStepper.setSpeed(300)
+    sense.clear()
 
-class RPIMotorHAT(object):
+class RPISenseHat(object):
     def __init__(self):
         self.content = None
 
@@ -50,5 +39,11 @@ def onTrigger(context, session):
     if flow_file is None:
         flow_file = session.create()
 
-    myStepper.step(100, Raspi_MotorHAT.FORWARD, Raspi_MotorHAT.SINGLE)
+    o = sense.get_orientation()
+    pitch = o["pitch"]
+    roll = o["roll"]
+    yaw = o["yaw"]
+    flow_file.addAttribute("sensehat_orientation_roll", str(roll))
+    flow_file.addAttribute("sensehat_orientation_pitch", str(pitch))
+    flow_file.addAttribute("sensehat_orientation_yaw", str(yaw))
     session.transfer(flow_file, REL_SUCCESS)
